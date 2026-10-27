@@ -17,6 +17,15 @@
       --accent-soft: #e3efe9;
       --danger: #c2413b;
       --shadow: 0 10px 30px rgba(31, 35, 40, 0.08);
+      --l-gray: #6b7280;
+      --l-red: #d1453b;
+      --l-orange: #d06a12;
+      --l-yellow: #a87b00;
+      --l-green: #2f8f4e;
+      --l-teal: #17807f;
+      --l-blue: #2f6fd1;
+      --l-purple: #7b4fd1;
+      --l-pink: #c43f7c;
     }
     @media (prefers-color-scheme: dark) {
       :root {
@@ -29,6 +38,15 @@
         --accent-soft: #23362f;
         --danger: #ef7d76;
         --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+        --l-gray: #a3a9b1;
+        --l-red: #f08079;
+        --l-orange: #f2a15a;
+        --l-yellow: #e6c35c;
+        --l-green: #6fcf8e;
+        --l-teal: #5ccfcb;
+        --l-blue: #7eaaf2;
+        --l-purple: #b39af2;
+        --l-pink: #f08cbb;
       }
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -151,6 +169,78 @@
     .footer button { font-size: .875rem; color: var(--muted); }
     .footer button:hover { color: var(--danger); }
     .hint { text-align: center; color: var(--muted); font-size: .8rem; margin-top: 16px; }
+
+    /* Nhãn */
+    [data-color="gray"] { --c: var(--l-gray); }
+    [data-color="red"] { --c: var(--l-red); }
+    [data-color="orange"] { --c: var(--l-orange); }
+    [data-color="yellow"] { --c: var(--l-yellow); }
+    [data-color="green"] { --c: var(--l-green); }
+    [data-color="teal"] { --c: var(--l-teal); }
+    [data-color="blue"] { --c: var(--l-blue); }
+    [data-color="purple"] { --c: var(--l-purple); }
+    [data-color="pink"] { --c: var(--l-pink); }
+
+    .chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: .75rem; font-weight: 500; line-height: 1.6;
+      padding: 1px 9px; border-radius: 999px;
+      color: var(--c); border: 1px solid transparent;
+      background: color-mix(in srgb, var(--c) 15%, transparent);
+      max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .chip::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--c); flex-shrink: 0; }
+    button.chip { transition: background .15s, border-color .15s; }
+    .chip.off { background: transparent; border-color: var(--border); color: var(--muted); }
+    .chip.off:hover { border-color: var(--c); }
+    .chip-ghost { font-size: .75rem; color: var(--muted); padding: 1px 9px; border-radius: 999px; border: 1px dashed var(--border); }
+    .chip-ghost:hover { color: var(--accent); border-color: var(--accent); }
+
+    .label-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .form-labels { padding: 0 16px 14px; border-bottom: 1px solid var(--border); margin-top: -4px; }
+    .label-filter { padding: 10px 16px; border-bottom: 1px solid var(--border); }
+    .label-filter:empty { display: none; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+    .meta .chip { font-size: .7rem; padding: 0 8px; }
+    .picker { margin-top: 8px; }
+
+    .tag { color: var(--muted); opacity: 0; padding: 4px 6px; border-radius: 6px; transition: opacity .15s; }
+    li:hover .tag, .tag:focus, .tag.open { opacity: 1; }
+    .tag:hover, .tag.open { color: var(--accent); }
+    @media (hover: none) { .tag { opacity: 1; } }
+    .tag svg { width: 16px; height: 16px; display: block; }
+
+    dialog {
+      width: min(440px, calc(100% - 32px));
+      margin: auto;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: var(--card);
+      color: var(--text);
+      box-shadow: var(--shadow);
+      padding: 0;
+    }
+    dialog::backdrop { background: rgba(0, 0, 0, .35); }
+    .dialog-head { display: flex; justify-content: space-between; align-items: center; padding: 16px; border-bottom: 1px solid var(--border); }
+    .dialog-head h2 { font-size: 1.1rem; font-weight: 600; }
+    .dialog-head button { color: var(--muted); padding: 4px 8px; border-radius: 6px; }
+    .dialog-head button:hover { color: var(--text); }
+    .label-list { max-height: 50vh; overflow-y: auto; }
+    .label-item, dialog form {
+      display: grid; grid-template-columns: 1fr auto; gap: 10px;
+      padding: 14px 16px; border-bottom: 1px solid var(--border);
+    }
+    dialog form { border-bottom: none; }
+    .label-item input, dialog form input {
+      font: inherit; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px;
+      background: transparent; color: var(--text); outline: none; min-width: 0;
+    }
+    .label-item input:focus { border-color: var(--accent); }
+    .label-item .delete { opacity: 1; }
+    .swatches { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 10px; padding: 2px; }
+    .swatch { width: 20px; height: 20px; border-radius: 50%; background: var(--c); transition: box-shadow .15s; }
+    .swatch.active { box-shadow: 0 0 0 2px var(--card), 0 0 0 4px var(--c); }
+    .label-list .empty { padding: 24px 16px; font-size: .875rem; }
   </style>
 </head>
 <body>
@@ -165,6 +255,7 @@
         <input id="input" type="text" placeholder="Thêm công việc mới..." autocomplete="off" maxlength="200" />
         <button class="btn-primary" type="submit">Thêm</button>
       </form>
+      <div class="label-row form-labels" id="formLabels"></div>
       <div class="progress"><div id="bar"></div></div>
       <div class="toolbar">
         <span id="count"></span>
@@ -180,18 +271,40 @@
           </select>
         </div>
       </div>
+      <div class="label-row label-filter" id="labelFilter"></div>
       <ul id="list"></ul>
       <div class="footer" id="footer" hidden>
         <button id="clear">Xóa công việc đã xong</button>
       </div>
     </section>
-    <p class="hint">Nhấp đúp vào công việc để sửa</p>
+    <p class="hint">Nhấp đúp vào công việc để sửa · Bấm biểu tượng nhãn để gắn nhãn</p>
   </main>
+
+  <dialog id="labelDialog">
+    <div class="dialog-head">
+      <h2>Quản lý nhãn</h2>
+      <button id="closeDialog" aria-label="Đóng">✕</button>
+    </div>
+    <div class="label-list" id="labelList"></div>
+    <form id="labelForm">
+      <input id="labelInput" type="text" placeholder="Tên nhãn mới..." maxlength="30" autocomplete="off" />
+      <button class="btn-primary" type="submit">Thêm</button>
+      <div class="swatches" id="newSwatches"></div>
+    </form>
+  </dialog>
 
   <script>
     const api = '/api/todos';
+    const labelApi = '/api/labels';
+    const COLORS = ['gray', 'red', 'orange', 'yellow', 'green', 'teal', 'blue', 'purple', 'pink'];
+    const TAG_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg>';
     let todos = [];
+    let labels = [];
     let filter = 'all';
+    let labelFilter = null;     // id nhãn đang lọc, null = không lọc
+    let newLabels = new Set();  // nhãn chọn sẵn cho công việc sắp thêm
+    let pickerFor = null;       // id công việc đang mở bảng chọn nhãn
+    let newColor = 'blue';
     let sort = 'newest';
     try { sort = localStorage.getItem('sort') || sort; } catch {}
 
@@ -213,14 +326,70 @@
     }
 
     async function load() {
-      todos = await request(api);
+      [todos, labels] = await Promise.all([request(api), request(labelApi)]);
       render();
     }
 
+    // Tạo thẻ nhãn; truyền onclick để thành nút bấm, on = false để hiện dạng chưa chọn
+    function chip(label, { onclick, on = true } = {}) {
+      const el = document.createElement(onclick ? 'button' : 'span');
+      el.className = on ? 'chip' : 'chip off';
+      el.dataset.color = label.color;
+      el.textContent = label.name;
+      el.title = label.name;
+      if (onclick) {
+        el.type = 'button';
+        el.setAttribute('aria-pressed', on);
+        el.onclick = onclick;
+      }
+      return el;
+    }
+
+    function manageButton(text) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'chip-ghost';
+      btn.textContent = text;
+      btn.onclick = openDialog;
+      return btn;
+    }
+
+    function renderLabelBars() {
+      const form = $('formLabels');
+      form.innerHTML = '';
+      for (const label of labels) {
+        form.appendChild(chip(label, {
+          on: newLabels.has(label.id),
+          onclick: () => {
+            newLabels.has(label.id) ? newLabels.delete(label.id) : newLabels.add(label.id);
+            renderLabelBars();
+          },
+        }));
+      }
+      form.appendChild(manageButton(labels.length ? 'Quản lý nhãn' : '+ Tạo nhãn để phân loại'));
+
+      const bar = $('labelFilter');
+      bar.innerHTML = '';
+      for (const label of labels) {
+        const count = todos.filter((t) => t.labels.includes(label.id)).length;
+        const el = chip({ ...label, name: `${label.name} · ${count}` }, {
+          on: labelFilter === label.id,
+          onclick: () => {
+            labelFilter = labelFilter === label.id ? null : label.id;
+            render();
+          },
+        });
+        el.title = `Lọc theo nhãn “${label.name}”`;
+        bar.appendChild(el);
+      }
+    }
+
     function render() {
+      renderLabelBars();
       const list = $('list');
       const visible = todos
         .filter((t) => (filter === 'all' ? true : filter === 'done' ? t.completed : !t.completed))
+        .filter((t) => labelFilter === null || t.labels.includes(labelFilter))
         .sort((a, b) => {
           const diff = new Date(a.createdAt) - new Date(b.createdAt) || a.id - b.id;
           return sort === 'newest' ? -diff : diff;
@@ -248,11 +417,39 @@
 
         const meta = document.createElement('span');
         meta.className = 'meta';
-        meta.textContent = formatDate(todo.createdAt);
+        meta.append(formatDate(todo.createdAt));
+        for (const label of labels) {
+          if (todo.labels.includes(label.id)) meta.appendChild(chip(label));
+        }
 
         const body = document.createElement('div');
         body.className = 'body';
         body.append(title, meta);
+
+        if (pickerFor === todo.id) {
+          const picker = document.createElement('div');
+          picker.className = 'label-row picker';
+          for (const label of labels) {
+            const on = todo.labels.includes(label.id);
+            picker.appendChild(chip(label, {
+              on,
+              onclick: () => update(todo.id, {
+                labels: on ? todo.labels.filter((id) => id !== label.id) : [...todo.labels, label.id],
+              }),
+            }));
+          }
+          picker.appendChild(manageButton(labels.length ? 'Quản lý nhãn' : '+ Tạo nhãn'));
+          body.appendChild(picker);
+        }
+
+        const tag = document.createElement('button');
+        tag.className = pickerFor === todo.id ? 'tag open' : 'tag';
+        tag.innerHTML = TAG_ICON;
+        tag.setAttribute('aria-label', 'Gắn nhãn');
+        tag.onclick = () => {
+          pickerFor = pickerFor === todo.id ? null : todo.id;
+          render();
+        };
 
         const del = document.createElement('button');
         del.className = 'delete';
@@ -260,7 +457,7 @@
         del.setAttribute('aria-label', 'Xóa');
         del.onclick = () => remove(todo.id);
 
-        li.append(check, body, del);
+        li.append(check, body, tag, del);
         list.appendChild(li);
       }
 
@@ -323,7 +520,10 @@
       const title = input.value.trim();
       if (!title) return;
       try {
-        const todo = await request(api, { method: 'POST', body: JSON.stringify({ title }) });
+        const todo = await request(api, {
+          method: 'POST',
+          body: JSON.stringify({ title, labels: [...newLabels] }),
+        });
         todos.push(todo);
         input.value = '';
         render();
@@ -351,6 +551,104 @@
       try { localStorage.setItem('sort', sort); } catch {}
       render();
     };
+
+    // Hộp thoại quản lý nhãn
+    function swatches(container, selected, onpick) {
+      container.innerHTML = '';
+      for (const color of COLORS) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = color === selected ? 'swatch active' : 'swatch';
+        btn.dataset.color = color;
+        btn.setAttribute('aria-label', `Màu ${color}`);
+        btn.onclick = () => onpick(color);
+        container.appendChild(btn);
+      }
+    }
+
+    function renderDialog() {
+      const list = $('labelList');
+      list.innerHTML = '';
+      if (!labels.length) {
+        list.innerHTML = '<p class="empty">Chưa có nhãn nào. Tạo nhãn đầu tiên bên dưới.</p>';
+      }
+      for (const label of labels) {
+        const row = document.createElement('div');
+        row.className = 'label-item';
+
+        const input = document.createElement('input');
+        input.value = label.name;
+        input.maxLength = 30;
+        input.setAttribute('aria-label', 'Tên nhãn');
+        input.onchange = () => {
+          const name = input.value.trim();
+          if (name && name !== label.name) updateLabel(label.id, { name });
+          else input.value = label.name;
+        };
+        input.onkeydown = (e) => { if (e.key === 'Enter') input.blur(); };
+
+        const del = document.createElement('button');
+        del.type = 'button';
+        del.className = 'delete';
+        del.textContent = '✕';
+        del.setAttribute('aria-label', 'Xóa nhãn');
+        del.onclick = () => removeLabel(label);
+
+        const sw = document.createElement('div');
+        sw.className = 'swatches';
+        swatches(sw, label.color, (color) => updateLabel(label.id, { color }));
+
+        row.append(input, del, sw);
+        list.appendChild(row);
+      }
+      swatches($('newSwatches'), newColor, (color) => { newColor = color; renderDialog(); });
+    }
+
+    function openDialog() {
+      renderDialog();
+      $('labelDialog').showModal();
+      $('labelInput').focus();
+    }
+
+    async function updateLabel(id, data) {
+      try {
+        const updated = await request(`${labelApi}/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+        labels = labels.map((l) => (l.id === id ? updated : l));
+      } catch (e) { alert(e.message); }
+      renderDialog();
+      render();
+    }
+
+    async function removeLabel(label) {
+      if (!confirm(`Xóa nhãn “${label.name}”? Nhãn sẽ được gỡ khỏi mọi công việc.`)) return;
+      try {
+        await request(`${labelApi}/${label.id}`, { method: 'DELETE' });
+        labels = labels.filter((l) => l.id !== label.id);
+        todos = todos.map((t) => ({ ...t, labels: t.labels.filter((id) => id !== label.id) }));
+        newLabels.delete(label.id);
+        if (labelFilter === label.id) labelFilter = null;
+        renderDialog();
+        render();
+      } catch (e) { alert(e.message); }
+    }
+
+    $('labelForm').onsubmit = async (e) => {
+      e.preventDefault();
+      const input = $('labelInput');
+      const name = input.value.trim();
+      if (!name) return;
+      try {
+        const label = await request(labelApi, { method: 'POST', body: JSON.stringify({ name, color: newColor }) });
+        labels.push(label);
+        input.value = '';
+        newColor = COLORS[(COLORS.indexOf(newColor) + 1) % COLORS.length];
+        renderDialog();
+        render();
+      } catch (err) { alert(err.message); }
+    };
+
+    $('closeDialog').onclick = () => $('labelDialog').close();
+    $('labelDialog').onclick = (e) => { if (e.target === e.currentTarget) e.currentTarget.close(); };
 
     load().catch((e) => alert('Không thể tải dữ liệu: ' + e.message));
   </script>

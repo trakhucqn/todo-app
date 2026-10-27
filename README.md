@@ -8,12 +8,13 @@
 - Đánh dấu hoàn thành / chưa hoàn thành
 - Lọc theo: Tất cả · Đang làm · Đã xong
 - Sắp xếp theo ngày tạo: Mới nhất · Cũ nhất (trình duyệt ghi nhớ lựa chọn)
+- Phân loại công việc bằng **nhãn có màu**: tạo/đổi tên/đổi màu/xóa nhãn, gắn nhiều nhãn cho một công việc, lọc theo nhãn (kèm số lượng)
 - Hiển thị thời gian tạo dưới mỗi công việc
 - Thanh tiến độ hiển thị tỉ lệ công việc đã hoàn thành
 - Xóa nhanh toàn bộ công việc đã xong
 - Nhấp đúp vào công việc để sửa tiêu đề (Enter để lưu, Esc để hủy)
 - Tự động chuyển giao diện sáng/tối theo cài đặt hệ điều hành
-- Dữ liệu được lưu vào file `todos.json`, không mất khi khởi động lại server
+- Dữ liệu được lưu vào file `todos.json` và `labels.json`, không mất khi khởi động lại server
 
 ## Yêu cầu
 
@@ -50,7 +51,8 @@ todo-app/
 │   └── index.html    # Giao diện người dùng
 ├── server.js         # Server Express và các API
 ├── package.json
-└── todos.json        # Dữ liệu (tự tạo khi chạy, không đưa lên Git)
+├── todos.json        # Dữ liệu công việc (tự tạo khi chạy, không đưa lên Git)
+└── labels.json       # Dữ liệu nhãn (tự tạo khi chạy, không đưa lên Git)
 ```
 
 ## API
@@ -61,9 +63,15 @@ Tất cả API nhận và trả về JSON.
 |-------------|------------------------|--------------------------------|
 | `GET`       | `/api/todos`           | Lấy danh sách công việc        |
 | `POST`      | `/api/todos`           | Thêm công việc mới             |
-| `PUT`       | `/api/todos/:id`       | Cập nhật tiêu đề hoặc trạng thái |
+| `PUT`       | `/api/todos/:id`       | Cập nhật tiêu đề, trạng thái hoặc nhãn |
 | `DELETE`    | `/api/todos/:id`       | Xóa một công việc              |
 | `DELETE`    | `/api/todos/completed` | Xóa tất cả công việc đã xong   |
+| `GET`       | `/api/labels`          | Lấy danh sách nhãn             |
+| `POST`      | `/api/labels`          | Thêm nhãn mới                  |
+| `PUT`       | `/api/labels/:id`      | Đổi tên hoặc màu nhãn          |
+| `DELETE`    | `/api/labels/:id`      | Xóa nhãn (gỡ khỏi mọi công việc) |
+
+Màu nhãn hợp lệ: `gray`, `red`, `orange`, `yellow`, `green`, `teal`, `blue`, `purple`, `pink`.
 
 ### Ví dụ
 
@@ -82,6 +90,7 @@ Kết quả:
   "id": 1,
   "title": "Mua sữa",
   "completed": false,
+  "labels": [],
   "createdAt": "2026-10-27T14:26:27.244Z"
 }
 ```
@@ -94,9 +103,21 @@ curl -X PUT http://localhost:3000/api/todos/1 \
   -d '{"completed": true}'
 ```
 
+Tạo nhãn và gắn vào công việc:
+
+```bash
+curl -X POST http://localhost:3000/api/labels \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Gấp", "color": "red"}'
+
+curl -X PUT http://localhost:3000/api/todos/1 \
+  -H "Content-Type: application/json" \
+  -d '{"labels": [1]}'
+```
+
 ### Mã lỗi
 
 | Mã    | Ý nghĩa                                  |
 |-------|------------------------------------------|
-| `400` | Tiêu đề bị để trống                      |
-| `404` | Không tìm thấy công việc với `id` đã cho |
+| `400` | Tiêu đề trống, nhãn không hợp lệ, tên nhãn trùng hoặc màu sai |
+| `404` | Không tìm thấy công việc hoặc nhãn với `id` đã cho |
