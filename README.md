@@ -7,6 +7,8 @@
 - Thêm, sửa, xóa công việc
 - Đánh dấu hoàn thành / chưa hoàn thành
 - Lọc theo: Tất cả · Đang làm · Đã xong
+- Sắp xếp theo ngày tạo: Mới nhất · Cũ nhất (trình duyệt ghi nhớ lựa chọn)
+- Hiển thị thời gian tạo dưới mỗi công việc
 - Thanh tiến độ hiển thị tỉ lệ công việc đã hoàn thành
 - Xóa nhanh toàn bộ công việc đã xong
 - Nhấp đúp vào công việc để sửa tiêu đề (Enter để lưu, Esc để hủy)
