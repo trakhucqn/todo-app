@@ -91,6 +91,20 @@
     .filters { display: flex; gap: 4px; }
     .filters button { padding: 4px 10px; border-radius: 999px; color: var(--muted); }
     .filters button.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+    .controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .sort {
+      font: inherit;
+      font-size: .875rem;
+      color: var(--muted);
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 3px 10px;
+      cursor: pointer;
+      outline: none;
+    }
+    .sort:focus { border-color: var(--accent); }
+    .sort option { background: var(--card); color: var(--text); }
 
     .progress { height: 4px; background: var(--border); }
     .progress div { height: 100%; background: var(--accent); width: 0; transition: width .3s; }
@@ -118,7 +132,9 @@
     li.done .check { background: var(--accent); border-color: var(--accent); }
     li.done .check::after { content: '✓'; color: #fff; font-size: 12px; font-weight: 700; }
 
-    .title { flex: 1; word-break: break-word; cursor: text; }
+    .body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+    .title { word-break: break-word; cursor: text; }
+    .meta { font-size: .75rem; color: var(--muted); }
     li.done .title { text-decoration: line-through; color: var(--muted); }
     .title-input {
       flex: 1; font: inherit; color: var(--text);
@@ -152,10 +168,16 @@
       <div class="progress"><div id="bar"></div></div>
       <div class="toolbar">
         <span id="count"></span>
-        <div class="filters">
-          <button data-filter="all" class="active">Tất cả</button>
-          <button data-filter="active">Đang làm</button>
-          <button data-filter="done">Đã xong</button>
+        <div class="controls">
+          <div class="filters">
+            <button data-filter="all" class="active">Tất cả</button>
+            <button data-filter="active">Đang làm</button>
+            <button data-filter="done">Đã xong</button>
+          </div>
+          <select id="sort" class="sort" aria-label="Sắp xếp">
+            <option value="newest">Mới nhất</option>
+            <option value="oldest">Cũ nhất</option>
+          </select>
         </div>
       </div>
       <ul id="list"></ul>
@@ -170,6 +192,8 @@
     const api = '/api/todos';
     let todos = [];
     let filter = 'all';
+    let sort = 'newest';
+    try { sort = localStorage.getItem('sort') || sort; } catch {}
 
     const $ = (id) => document.getElementById(id);
     $('date').textContent = new Date().toLocaleDateString('vi-VN', {
@@ -195,9 +219,12 @@
 
     function render() {
       const list = $('list');
-      const visible = todos.filter((t) =>
-        filter === 'all' ? true : filter === 'done' ? t.completed : !t.completed
-      );
+      const visible = todos
+        .filter((t) => (filter === 'all' ? true : filter === 'done' ? t.completed : !t.completed))
+        .sort((a, b) => {
+          const diff = new Date(a.createdAt) - new Date(b.createdAt) || a.id - b.id;
+          return sort === 'newest' ? -diff : diff;
+        });
       list.innerHTML = '';
 
       if (!visible.length) {
@@ -217,7 +244,15 @@
         const title = document.createElement('span');
         title.className = 'title';
         title.textContent = todo.title;
-        title.ondblclick = () => startEdit(li, title, todo);
+        title.ondblclick = () => startEdit(body, title, todo);
+
+        const meta = document.createElement('span');
+        meta.className = 'meta';
+        meta.textContent = formatDate(todo.createdAt);
+
+        const body = document.createElement('div');
+        body.className = 'body';
+        body.append(title, meta);
 
         const del = document.createElement('button');
         del.className = 'delete';
@@ -225,7 +260,7 @@
         del.setAttribute('aria-label', 'Xóa');
         del.onclick = () => remove(todo.id);
 
-        li.append(check, title, del);
+        li.append(check, body, del);
         list.appendChild(li);
       }
 
@@ -235,11 +270,17 @@
       $('footer').hidden = done === 0;
     }
 
-    function startEdit(li, titleEl, todo) {
+    function formatDate(iso) {
+      return new Date(iso).toLocaleString('vi-VN', {
+        hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric',
+      });
+    }
+
+    function startEdit(container, titleEl, todo) {
       const input = document.createElement('input');
       input.className = 'title-input';
       input.value = todo.title;
-      li.replaceChild(input, titleEl);
+      container.replaceChild(input, titleEl);
       input.focus();
 
       let finished = false;
@@ -303,6 +344,13 @@
         render();
       };
     });
+
+    $('sort').value = sort;
+    $('sort').onchange = (e) => {
+      sort = e.target.value;
+      try { localStorage.setItem('sort', sort); } catch {}
+      render();
+    };
 
     load().catch((e) => alert('Không thể tải dữ liệu: ' + e.message));
   </script>
