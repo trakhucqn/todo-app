@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Todo List</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f4f1ec;
+      --card: #ffffff;
+      --text: #1f2328;
+      --muted: #6b7280;
+      --border: #e7e2da;
+      --accent: #2f6f5e;
+      --accent-soft: #e3efe9;
+      --danger: #c2413b;
+      --shadow: 0 10px 30px rgba(31, 35, 40, 0.08);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #16181b;
+        --card: #1f2226;
+        --text: #e9e7e3;
+        --muted: #9aa0a6;
+        --border: #2e3238;
+        --accent: #6cc3a6;
+        --accent-soft: #23362f;
+        --danger: #ef7d76;
+        --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+      }
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Be Vietnam Pro', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 56px 16px;
+    }
+    .app { width: 100%; max-width: 560px; }
+    header { margin-bottom: 24px; }
+    h1 { font-size: 2rem; font-weight: 700; letter-spacing: -0.02em; }
+    .date { color: var(--muted); margin-top: 4px; }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    form { display: flex; gap: 8px; padding: 16px; border-bottom: 1px solid var(--border); }
+    form input {
+      flex: 1;
+      font: inherit;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: transparent;
+      color: var(--text);
+      outline: none;
+      transition: border-color .15s;
+    }
+    form input:focus { border-color: var(--accent); }
+    button { font: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      padding: 0 18px;
+      border-radius: 10px;
+      font-weight: 600;
+      transition: opacity .15s;
+    }
+    .btn-primary:hover { opacity: .9; }
+
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 16px;
+      font-size: .875rem;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .filters { display: flex; gap: 4px; }
+    .filters button { padding: 4px 10px; border-radius: 999px; color: var(--muted); }
+    .filters button.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+
+    .progress { height: 4px; background: var(--border); }
+    .progress div { height: 100%; background: var(--accent); width: 0; transition: width .3s; }
+
+    ul { list-style: none; }
+    li {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      animation: fadeIn .2s ease;
+    }
+    li:last-child { border-bottom: none; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; } }
+
+    .check {
+      width: 22px; height: 22px; flex-shrink: 0;
+      border: 2px solid var(--border);
+      border-radius: 50%;
+      display: grid; place-items: center;
+      transition: all .15s;
+    }
+    .check:hover { border-color: var(--accent); }
+    li.done .check { background: var(--accent); border-color: var(--accent); }
+    li.done .check::after { content: '✓'; color: #fff; font-size: 12px; font-weight: 700; }
+
+    .title { flex: 1; word-break: break-word; cursor: text; }
+    li.done .title { text-decoration: line-through; color: var(--muted); }
+    .title-input {
+      flex: 1; font: inherit; color: var(--text);
+      background: transparent; border: none;
+      border-bottom: 1px solid var(--accent); outline: none;
+    }
+    .delete { color: var(--muted); opacity: 0; padding: 4px 8px; border-radius: 6px; transition: opacity .15s; }
+    li:hover .delete, .delete:focus { opacity: 1; }
+    .delete:hover { color: var(--danger); }
+    @media (hover: none) { .delete { opacity: 1; } }
+
+    .empty { text-align: center; padding: 40px 16px; color: var(--muted); }
+    .footer { display: flex; justify-content: flex-end; padding: 10px 16px; border-top: 1px solid var(--border); }
+    .footer button { font-size: .875rem; color: var(--muted); }
+    .footer button:hover { color: var(--danger); }
+    .hint { text-align: center; color: var(--muted); font-size: .8rem; margin-top: 16px; }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <h1>Công việc của tôi</h1>
+      <p class="date" id="date"></p>
+    </header>
+
+    <section class="card">
+      <form id="form">
+        <input id="input" type="text" placeholder="Thêm công việc mới..." autocomplete="off" maxlength="200" />
+        <button class="btn-primary" type="submit">Thêm</button>
+      </form>
+      <div class="progress"><div id="bar"></div></div>
+      <div class="toolbar">
+        <span id="count"></span>
+        <div class="filters">
+          <button data-filter="all" class="active">Tất cả</button>
+          <button data-filter="active">Đang làm</button>
+          <button data-filter="done">Đã xong</button>
+        </div>
+      </div>
+      <ul id="list"></ul>
+      <div class="footer" id="footer" hidden>
+        <button id="clear">Xóa công việc đã xong</button>
+      </div>
+    </section>
+    <p class="hint">Nhấp đúp vào công việc để sửa</p>
+  </main>
+
+  <script>
+    const api = '/api/todos';
+    let todos = [];
+    let filter = 'all';
+
+    const $ = (id) => document.getElementById(id);
+    $('date').textContent = new Date().toLocaleDateString('vi-VN', {
+      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+    });
+
+    async function request(url, options = {}) {
+      const res = await fetch(url, {
+        headers: { 'Content-Type': 'application/json' },
+        ...options,
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Có lỗi xảy ra');
+      }
+      return res.status === 204 ? null : res.json();
+    }
+
+    async function load() {
+      todos = await request(api);
+      render();
+    }
+
+    function render() {
+      const list = $('list');
+      const visible = todos.filter((t) =>
+        filter === 'all' ? true : filter === 'done' ? t.completed : !t.completed
+      );
+      list.innerHTML = '';
+
+      if (!visible.length) {
+        const msg = todos.length ? 'Không có công việc nào ở mục này' : 'Chưa có công việc nào. Hãy thêm việc đầu tiên!';
+        list.innerHTML = `<li class="empty" style="display:block">${msg}</li>`;
+      }
+
+      for (const todo of visible) {
+        const li = document.createElement('li');
+        if (todo.completed) li.classList.add('done');
+
+        const check = document.createElement('button');
+        check.className = 'check';
+        check.setAttribute('aria-label', 'Đánh dấu hoàn thành');
+        check.onclick = () => update(todo.id, { completed: !todo.completed });
+
+        const title = document.createElement('span');
+        title.className = 'title';
+        title.textContent = todo.title;
+        title.ondblclick = () => startEdit(li, title, todo);
+
+        const del = document.createElement('button');
+        del.className = 'delete';
+        del.textContent = '✕';
+        del.setAttribute('aria-label', 'Xóa');
+        del.onclick = () => remove(todo.id);
+
+        li.append(check, title, del);
+        list.appendChild(li);
+      }
+
+      const done = todos.filter((t) => t.completed).length;
+      $('count').textContent = `${todos.length - done} việc còn lại · ${done}/${todos.length} hoàn thành`;
+      $('bar').style.width = todos.length ? `${(done / todos.length) * 100}%` : '0';
+      $('footer').hidden = done === 0;
+    }
+
+    function startEdit(li, titleEl, todo) {
+      const input = document.createElement('input');
+      input.className = 'title-input';
+      input.value = todo.title;
+      li.replaceChild(input, titleEl);
+      input.focus();
+
+      let finished = false;
+      const finish = async (save) => {
+        if (finished) return;
+        finished = true;
+        const value = input.value.trim();
+        if (save && value && value !== todo.title) {
+          await update(todo.id, { title: value });
+        } else {
+          render();
+        }
+      };
+      input.onkeydown = (e) => {
+        if (e.key === 'Enter') finish(true);
+        if (e.key === 'Escape') finish(false);
+      };
+      input.onblur = () => finish(true);
+    }
+
+    async function update(id, data) {
+      try {
+        const updated = await request(`${api}/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+        todos = todos.map((t) => (t.id === id ? updated : t));
+        render();
+      } catch (e) { alert(e.message); }
+    }
+
+    async function remove(id) {
+      try {
+        await request(`${api}/${id}`, { method: 'DELETE' });
+        todos = todos.filter((t) => t.id !== id);
+        render();
+      } catch (e) { alert(e.message); }
+    }
+
+    $('form').onsubmit = async (e) => {
+      e.preventDefault();
+      const input = $('input');
+      const title = input.value.trim();
+      if (!title) return;
+      try {
+        const todo = await request(api, { method: 'POST', body: JSON.stringify({ title }) });
+        todos.push(todo);
+        input.value = '';
+        render();
+      } catch (err) { alert(err.message); }
+    };
+
+    $('clear').onclick = async () => {
+      await request(`${api}/completed`, { method: 'DELETE' });
+      todos = todos.filter((t) => !t.completed);
+      render();
+    };
+
+    document.querySelectorAll('.filters button').forEach((btn) => {
+      btn.onclick = () => {
+        document.querySelector('.filters .active').classList.remove('active');
+        btn.classList.add('active');
+        filter = btn.dataset.filter;
+        render();
+      };
+    });
+
+    load().catch((e) => alert('Không thể tải dữ liệu: ' + e.message));
+  </script>
+</body>
+</html>
