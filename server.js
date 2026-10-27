@@ -30,8 +30,8 @@ function saveLabels() {
   fs.writeFileSync(LABELS_FILE, JSON.stringify(labels, null, 2));
 }
 
-// Công việc tạo trước khi có tính năng nhãn sẽ được gán danh sách nhãn rỗng
-let todos = loadJSON(DATA_FILE).map((t) => ({ labels: [], ...t }));
+// Công việc tạo trước khi có tính năng nhãn/hạn chót sẽ được gán giá trị mặc định
+let todos = loadJSON(DATA_FILE).map((t) => ({ labels: [], dueDate: null, ...t }));
 let nextId = todos.reduce((max, t) => Math.max(max, t.id), 0) + 1;
 
 let labels = loadJSON(LABELS_FILE);
@@ -42,6 +42,14 @@ function parseLabelIds(value) {
   if (!Array.isArray(value)) return null;
   const ids = [...new Set(value.map(Number))];
   return ids.every((id) => labels.some((l) => l.id === id)) ? ids : null;
+}
+
+// Hạn chót dạng YYYY-MM-DD, null hoặc chuỗi rỗng để bỏ hạn; trả về undefined nếu không hợp lệ
+function parseDueDate(value) {
+  if (value === null || value === '') return null;
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return undefined;
+  const date = new Date(`${value}T00:00:00Z`);
+  return !isNaN(date) && date.toISOString().slice(0, 10) === value ? value : undefined;
 }
 
 // Kiểm tra tên và màu nhãn; trả về thông báo lỗi hoặc null nếu hợp lệ
@@ -75,11 +83,16 @@ app.post('/api/todos', (req, res) => {
   if (!todoLabels) {
     return res.status(400).json({ error: 'Nhãn không hợp lệ' });
   }
+  const dueDate = req.body.dueDate === undefined ? null : parseDueDate(req.body.dueDate);
+  if (dueDate === undefined) {
+    return res.status(400).json({ error: 'Hạn chót không hợp lệ' });
+  }
   const todo = {
     id: nextId++,
     title,
     completed: false,
     labels: todoLabels,
+    dueDate,
     createdAt: new Date().toISOString(),
   };
   todos.push(todo);
@@ -87,7 +100,7 @@ app.post('/api/todos', (req, res) => {
   res.status(201).json(todo);
 });
 
-// Cập nhật công việc (tiêu đề, trạng thái hoặc nhãn)
+// Cập nhật công việc (tiêu đề, trạng thái, nhãn hoặc hạn chót)
 app.put('/api/todos/:id', (req, res) => {
   const todo = todos.find((t) => t.id === Number(req.params.id));
   if (!todo) {
@@ -109,6 +122,13 @@ app.put('/api/todos/:id', (req, res) => {
       return res.status(400).json({ error: 'Nhãn không hợp lệ' });
     }
     todo.labels = todoLabels;
+  }
+  if (req.body.dueDate !== undefined) {
+    const dueDate = parseDueDate(req.body.dueDate);
+    if (dueDate === undefined) {
+      return res.status(400).json({ error: 'Hạn chót không hợp lệ' });
+    }
+    todo.dueDate = dueDate;
   }
   saveTodos();
   res.json(todo);

@@ -7,8 +7,9 @@
 - Thêm, sửa, xóa công việc
 - Đánh dấu hoàn thành / chưa hoàn thành
 - Lọc theo: Tất cả · Đang làm · Đã xong
-- Sắp xếp theo ngày tạo: Mới nhất · Cũ nhất (trình duyệt ghi nhớ lựa chọn)
+- Sắp xếp: Mới nhất · Cũ nhất · Hạn chót gần nhất (trình duyệt ghi nhớ lựa chọn)
 - Phân loại công việc bằng **nhãn có màu**: tạo/đổi tên/đổi màu/xóa nhãn, gắn nhiều nhãn cho một công việc, lọc theo nhãn (kèm số lượng)
+- Đặt **hạn chót** cho công việc: tô cam khi đến hạn hôm nay/ngày mai, tô đỏ khi quá hạn, đếm số việc quá hạn, sắp xếp theo hạn chót gần nhất
 - Hiển thị thời gian tạo dưới mỗi công việc
 - Thanh tiến độ hiển thị tỉ lệ công việc đã hoàn thành
 - Xóa nhanh toàn bộ công việc đã xong
@@ -63,7 +64,7 @@ Tất cả API nhận và trả về JSON.
 |-------------|------------------------|--------------------------------|
 | `GET`       | `/api/todos`           | Lấy danh sách công việc        |
 | `POST`      | `/api/todos`           | Thêm công việc mới             |
-| `PUT`       | `/api/todos/:id`       | Cập nhật tiêu đề, trạng thái hoặc nhãn |
+| `PUT`       | `/api/todos/:id`       | Cập nhật tiêu đề, trạng thái, nhãn hoặc hạn chót |
 | `DELETE`    | `/api/todos/:id`       | Xóa một công việc              |
 | `DELETE`    | `/api/todos/completed` | Xóa tất cả công việc đã xong   |
 | `GET`       | `/api/labels`          | Lấy danh sách nhãn             |
@@ -72,6 +73,8 @@ Tất cả API nhận và trả về JSON.
 | `DELETE`    | `/api/labels/:id`      | Xóa nhãn (gỡ khỏi mọi công việc) |
 
 Màu nhãn hợp lệ: `gray`, `red`, `orange`, `yellow`, `green`, `teal`, `blue`, `purple`, `pink`.
+
+Hạn chót (`dueDate`) có dạng `YYYY-MM-DD`; gửi `null` để bỏ hạn.
 
 ### Ví dụ
 
@@ -91,6 +94,7 @@ Kết quả:
   "title": "Mua sữa",
   "completed": false,
   "labels": [],
+  "dueDate": null,
   "createdAt": "2026-10-27T14:26:27.244Z"
 }
 ```
@@ -115,9 +119,17 @@ curl -X PUT http://localhost:3000/api/todos/1 \
   -d '{"labels": [1]}'
 ```
 
+Đặt hạn chót:
+
+```bash
+curl -X PUT http://localhost:3000/api/todos/1 \
+  -H "Content-Type: application/json" \
+  -d '{"dueDate": "2026-11-05"}'
+```
+
 ### Mã lỗi
 
 | Mã    | Ý nghĩa                                  |
 |-------|------------------------------------------|
-| `400` | Tiêu đề trống, nhãn không hợp lệ, tên nhãn trùng hoặc màu sai |
+| `400` | Tiêu đề trống, nhãn/hạn chót không hợp lệ, tên nhãn trùng hoặc màu sai |
 | `404` | Không tìm thấy công việc hoặc nhãn với `id` đã cho |

@@ -8,6 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
     :root {
+      color-scheme: light dark;
       --bg: #f4f1ec;
       --card: #ffffff;
       --text: #1f2328;
@@ -84,6 +85,10 @@
       transition: border-color .15s;
     }
     form input:focus { border-color: var(--accent); }
+    #form { flex-wrap: wrap; }
+    #input { min-width: 180px; }
+    #due { flex: 0 0 auto; padding: 10px 12px; color: var(--muted); }
+    #due.has-value { color: var(--text); }
     button { font: inherit; cursor: pointer; border: none; background: none; color: inherit; }
     .btn-primary {
       background: var(--accent);
@@ -204,11 +209,31 @@
     .meta .chip { font-size: .7rem; padding: 0 8px; }
     .picker { margin-top: 8px; }
 
-    .tag { color: var(--muted); opacity: 0; padding: 4px 6px; border-radius: 6px; transition: opacity .15s; }
-    li:hover .tag, .tag:focus, .tag.open { opacity: 1; }
-    .tag:hover, .tag.open { color: var(--accent); }
-    @media (hover: none) { .tag { opacity: 1; } }
-    .tag svg { width: 16px; height: 16px; display: block; }
+    .act { color: var(--muted); opacity: 0; padding: 4px 6px; border-radius: 6px; transition: opacity .15s; }
+    li:hover .act, .act:focus, .act.open { opacity: 1; }
+    .act:hover, .act.open { color: var(--accent); }
+    @media (hover: none) { .act { opacity: 1; } }
+    .act svg { width: 16px; height: 16px; display: block; }
+
+    /* Hạn chót */
+    .due {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: .7rem; font-weight: 500; line-height: 1.6;
+      color: var(--muted); padding: 0 7px; border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+    .due svg { width: 11px; height: 11px; }
+    .due:hover { border-color: var(--accent); }
+    .due.soon { color: var(--l-orange); border-color: transparent; background: color-mix(in srgb, var(--l-orange) 15%, transparent); }
+    .due.overdue { color: var(--danger); border-color: transparent; background: color-mix(in srgb, var(--danger) 15%, transparent); }
+    li.done .due { text-decoration: line-through; }
+    li.overdue { box-shadow: inset 3px 0 0 var(--danger); }
+    .due-edit {
+      font: inherit; font-size: .75rem; color: var(--text);
+      background: transparent; border: 1px solid var(--accent); border-radius: 6px;
+      padding: 0 4px; outline: none;
+    }
+    .overdue-count { color: var(--danger); font-weight: 600; }
 
     dialog {
       width: min(440px, calc(100% - 32px));
@@ -253,6 +278,7 @@
     <section class="card">
       <form id="form">
         <input id="input" type="text" placeholder="Thêm công việc mới..." autocomplete="off" maxlength="200" />
+        <input id="due" type="date" aria-label="Hạn chót" title="Hạn chót (không bắt buộc)" />
         <button class="btn-primary" type="submit">Thêm</button>
       </form>
       <div class="label-row form-labels" id="formLabels"></div>
@@ -268,6 +294,7 @@
           <select id="sort" class="sort" aria-label="Sắp xếp">
             <option value="newest">Mới nhất</option>
             <option value="oldest">Cũ nhất</option>
+            <option value="due">Hạn chót gần nhất</option>
           </select>
         </div>
       </div>
@@ -277,7 +304,7 @@
         <button id="clear">Xóa công việc đã xong</button>
       </div>
     </section>
-    <p class="hint">Nhấp đúp vào công việc để sửa · Bấm biểu tượng nhãn để gắn nhãn</p>
+    <p class="hint">Nhấp đúp vào công việc để sửa · Bấm biểu tượng lịch hoặc nhãn để đặt hạn, gắn nhãn</p>
   </main>
 
   <dialog id="labelDialog">
@@ -298,8 +325,10 @@
     const labelApi = '/api/labels';
     const COLORS = ['gray', 'red', 'orange', 'yellow', 'green', 'teal', 'blue', 'purple', 'pink'];
     const TAG_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg>';
+    const CAL_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>';
     let todos = [];
     let labels = [];
+    let dueFor = null;          // id công việc đang sửa hạn chót
     let filter = 'all';
     let labelFilter = null;     // id nhãn đang lọc, null = không lọc
     let newLabels = new Set();  // nhãn chọn sẵn cho công việc sắp thêm
@@ -392,6 +421,8 @@
         .filter((t) => labelFilter === null || t.labels.includes(labelFilter))
         .sort((a, b) => {
           const diff = new Date(a.createdAt) - new Date(b.createdAt) || a.id - b.id;
+          // Việc không có hạn chót xếp cuối
+          if (sort === 'due') return (a.dueDate || '9999').localeCompare(b.dueDate || '9999') || diff;
           return sort === 'newest' ? -diff : diff;
         });
       list.innerHTML = '';
@@ -404,6 +435,8 @@
       for (const todo of visible) {
         const li = document.createElement('li');
         if (todo.completed) li.classList.add('done');
+        const due = todo.dueDate ? dueInfo(todo) : null;
+        if (due && due.state === 'overdue') li.classList.add('overdue');
 
         const check = document.createElement('button');
         check.className = 'check';
@@ -417,6 +450,17 @@
 
         const meta = document.createElement('span');
         meta.className = 'meta';
+        if (dueFor === todo.id) {
+          meta.appendChild(dueEditor(todo));
+        } else if (due) {
+          const badge = document.createElement('button');
+          badge.className = due.state ? `due ${due.state}` : 'due';
+          badge.innerHTML = CAL_ICON;
+          badge.append(due.text);
+          badge.title = 'Đổi hạn chót';
+          badge.onclick = () => { dueFor = todo.id; render(); };
+          meta.appendChild(badge);
+        }
         meta.append(formatDate(todo.createdAt));
         for (const label of labels) {
           if (todo.labels.includes(label.id)) meta.appendChild(chip(label));
@@ -442,8 +486,17 @@
           body.appendChild(picker);
         }
 
+        const cal = document.createElement('button');
+        cal.className = dueFor === todo.id ? 'act open' : 'act';
+        cal.innerHTML = CAL_ICON;
+        cal.setAttribute('aria-label', 'Đặt hạn chót');
+        cal.onclick = () => {
+          dueFor = dueFor === todo.id ? null : todo.id;
+          render();
+        };
+
         const tag = document.createElement('button');
-        tag.className = pickerFor === todo.id ? 'tag open' : 'tag';
+        tag.className = pickerFor === todo.id ? 'act open' : 'act';
         tag.innerHTML = TAG_ICON;
         tag.setAttribute('aria-label', 'Gắn nhãn');
         tag.onclick = () => {
@@ -457,12 +510,26 @@
         del.setAttribute('aria-label', 'Xóa');
         del.onclick = () => remove(todo.id);
 
-        li.append(check, body, tag, del);
+        li.append(check, body, cal, tag, del);
         list.appendChild(li);
       }
 
+      const editing = list.querySelector('.due-edit');
+      if (editing) {
+        editing.focus();
+        try { editing.showPicker(); } catch {}
+      }
+
       const done = todos.filter((t) => t.completed).length;
+      const today = localDate(new Date());
+      const overdue = todos.filter((t) => !t.completed && t.dueDate && t.dueDate < today).length;
       $('count').textContent = `${todos.length - done} việc còn lại · ${done}/${todos.length} hoàn thành`;
+      if (overdue) {
+        const warn = document.createElement('span');
+        warn.className = 'overdue-count';
+        warn.textContent = ` · ${overdue} quá hạn`;
+        $('count').appendChild(warn);
+      }
       $('bar').style.width = todos.length ? `${(done / todos.length) * 100}%` : '0';
       $('footer').hidden = done === 0;
     }
@@ -471,6 +538,56 @@
       return new Date(iso).toLocaleString('vi-VN', {
         hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric',
       });
+    }
+
+    // Ngày theo giờ máy, dạng YYYY-MM-DD (cùng định dạng với dueDate)
+    function localDate(d) {
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    // Chữ hiển thị và trạng thái (overdue / soon / '') của hạn chót
+    function dueInfo(todo) {
+      const [y, m, d] = todo.dueDate.split('-').map(Number);
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const days = Math.round((new Date(y, m - 1, d) - today) / 86400000);
+
+      let text = y === now.getFullYear() ? `${d}/${m}` : `${d}/${m}/${y}`;
+      if (days === 0) text = 'Hôm nay';
+      else if (days === 1) text = 'Ngày mai';
+      else if (days === -1) text = 'Hôm qua';
+      if (!todo.completed && days < -1) text += ` · trễ ${-days} ngày`;
+
+      const state = todo.completed ? '' : days < 0 ? 'overdue' : days <= 1 ? 'soon' : '';
+      return { text: `Hạn: ${text}`, state };
+    }
+
+    function dueEditor(todo) {
+      const input = document.createElement('input');
+      input.type = 'date';
+      input.className = 'due-edit';
+      input.value = todo.dueDate || '';
+      input.setAttribute('aria-label', 'Hạn chót');
+
+      let finished = false;
+      const finish = (value) => {
+        if (finished) return;
+        finished = true;
+        dueFor = null;
+        if (value !== undefined && value !== (todo.dueDate || '')) {
+          update(todo.id, { dueDate: value || null });
+        } else {
+          render();
+        }
+      };
+      input.onchange = () => finish(input.value);
+      input.onkeydown = (e) => {
+        if (e.key === 'Enter') finish(input.value);
+        if (e.key === 'Escape') finish();
+      };
+      // Đợi một nhịp để sự kiện change (nếu có) được xử lý trước
+      input.onblur = () => setTimeout(() => finish(), 150);
+      return input;
     }
 
     function startEdit(container, titleEl, todo) {
@@ -522,10 +639,12 @@
       try {
         const todo = await request(api, {
           method: 'POST',
-          body: JSON.stringify({ title, labels: [...newLabels] }),
+          body: JSON.stringify({ title, labels: [...newLabels], dueDate: $('due').value || null }),
         });
         todos.push(todo);
         input.value = '';
+        $('due').value = '';
+        $('due').classList.remove('has-value');
         render();
       } catch (err) { alert(err.message); }
     };
@@ -544,6 +663,8 @@
         render();
       };
     });
+
+    $('due').oninput = (e) => e.target.classList.toggle('has-value', !!e.target.value);
 
     $('sort').value = sort;
     $('sort').onchange = (e) => {
